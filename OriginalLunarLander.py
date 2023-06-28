@@ -393,7 +393,7 @@ def main(args=None):
     run = 0
 
     num_actions = 100
-    search_type = 'test'
+    search_type = 'ME'
     #game = GameEvaluator('Qbert-v0', seed=1009, num_rep=2)
     game = GameEvaluator('LunarLander-v2', seed=1500, num_rep=3)
 

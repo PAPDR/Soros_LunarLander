@@ -83,7 +83,7 @@ class Agent:
         self.fitness = 0
         self.game = game
         self.sequence_len = sequence_len
-        self.commands = [char for char in str(2211221010102033021232100200302221032322301110220222120113321130212300001110022131020031331113221131)]
+        self.commands = [int(char) for char in str(2211221010102033021232100200302221032322301110220222120113321130212300001110022131020031331113221131)]
         #self.commands = [
             #randint(0, game.num_actions-1) for _ in range(sequence_len)
         #]
@@ -393,7 +393,7 @@ def main(args=None):
     run = 0
 
     num_actions = 100
-    search_type = 'ME'
+    search_type = 'test'
     #game = GameEvaluator('Qbert-v0', seed=1009, num_rep=2)
     game = GameEvaluator('LunarLander-v2', seed=1500, num_rep=3)
 

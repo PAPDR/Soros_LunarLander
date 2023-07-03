@@ -1,0 +1,5 @@
+box2d-py==2.3.5
+cloudpickle==2.2.1
+gym==0.21.0
+numpy==1.24.4
+pyglet==1.5.27

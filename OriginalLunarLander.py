@@ -83,7 +83,7 @@ class Agent:
         self.fitness = 0
         self.game = game
         self.sequence_len = sequence_len
-        self.commands = [char for char in str(2211221010102033021232100200302221032322301110220222120113321130212300001110022131020031331113221131)]
+        self.commands = [int(char) for char in str(2211221010102033021232100200302221032322301110220222120113321130212300001110022131020031331113221131)]
         #self.commands = [
             #randint(0, game.num_actions-1) for _ in range(sequence_len)
         #]

@@ -4,7 +4,7 @@
 
 The original lunar lander code, unedited. Tested with Python 3.8.10, in a virtual environment with the requirements in `requirements.txt`. To install and activate a python virtual environment, follow the instructions [here](https://docs.python.org/3/library/venv.html). Once activated, run `pip install -r requirements.txt`. 
 
-***Soros_Lunar_Lander.ipynb***
+***Changed_Lunar_Lander.ipynb***
 Lunar Lander Map-Elites with Sliding Buffer code based on Professor Soros original code.
 The code currently has a bug where when running the "runME" section causes the fixedFeatureMap to remove all of it's elites.
 

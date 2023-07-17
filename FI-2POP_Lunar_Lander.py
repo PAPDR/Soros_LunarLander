@@ -74,6 +74,8 @@ class GameEvaluator:
         #agent.features = tuple(final_observation[:1])
         #agent.features = (numNewChars, numNewChars)
         #agent.features = (runningHash1, runningHash2)
+        
+        #Give AGENT 2 Feature lists, 1 for feasible 1 for unfeasible
         agent.features = (agent.fitness, agent.fitness)
         agent.action_count = action_count
         
@@ -87,6 +89,7 @@ class Agent:
         self.commands = [
             randint(0, game.num_actions-1) for _ in range(sequence_len)
         ]
+        self.features = (0,0)
 
     def mutate(self):
         child = Agent(self.game, self.sequence_len)
@@ -225,6 +228,9 @@ class FixedFeatureMap:
         self.boundaries = boundaries
         self.elite_map = {}
         self.elite_indices = []
+        
+        #Count replacements
+        self.num_replacements = 0
 
         # A group is the number of cells along 
         # each dimension in the feature space.
@@ -266,8 +272,9 @@ class FixedFeatureMap:
             replaced_elite = True
         elif self.elite_map[index].fitness < to_add.fitness:
             self.elite_map[index] = to_add
+            self.num_replacements = self.num_replacements+1
             replaced_elite = True
-
+        
         return replaced_elite
 
     def remove_from_map(self, to_remove):
@@ -291,6 +298,7 @@ class FixedFeatureMap:
         
     def add(self, to_add):
         self.num_individuals_added += 1
+        #The \ indicates the line continues to the next line
         portion_done = \
             self.num_individuals_added / self.num_individuals_to_evaluate
         next_num_groups = self.group_sizer.get_size(portion_done)
@@ -368,7 +376,16 @@ def runME(runnum, game, sequence_len,
         if individuals_evaluated < init_pop_size:
             cur_agent = Agent(game, sequence_len)
         else:
-            cur_agent = feature_map_feasible.get_random_elite().mutate()
+            #Only mutating from feasible map
+            #Want to explore unfeasible space
+            #Need exploration method 
+            
+            #Randomly choose to get elite from feasible or unfeasible sets
+            
+            if randint(0, 1) > 0 and feature_map_unfeasible.get_size() > 0:
+                cur_agent = feature_map_unfeasible.get_random_elite().mutate()
+            else:
+                cur_agent = feature_map_feasible.get_random_elite().mutate()
 
         
         
@@ -397,9 +414,10 @@ def runME(runnum, game, sequence_len,
                 f.write(str(command))
         f.write("\n")
     
-    print("Sizes:")
-    print(feature_map_feasible.get_size())
-    print(feature_map_unfeasible.get_size())
+    print("Feasible Agents: ", feature_map_feasible.get_size())
+    print("Infeasible Agents: ", feature_map_unfeasible.get_size())
+    print("Feasible Replacements: ", feature_map_feasible.num_replacements)
+    print("Infeasible Replacements: ", feature_map_unfeasible.num_replacements)
     return best_fitness, best_sequence
 
 

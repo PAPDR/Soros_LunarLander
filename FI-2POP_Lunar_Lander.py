@@ -87,6 +87,9 @@ class Agent:
         self.commands = [
             randint(0, game.num_actions-1) for _ in range(sequence_len)
         ]
+        self.features = (None, None)
+        self.feasible_features = (None, None)
+        self.unfeasible_features = ()
 
     def mutate(self):
         child = Agent(self.game, self.sequence_len)
@@ -97,10 +100,12 @@ class Agent:
         return child
 
 class LinearSizer:
+    
+    
     def __init__(self, start_size, end_size):
         self.min_size = start_size
         self.range = end_size-start_size
-
+    
     def get_size(self, portion_done):
         size = int((portion_done+1e-9)*self.range) + self.min_size
         return min(size, self.min_size+self.range)
@@ -225,6 +230,9 @@ class FixedFeatureMap:
         self.boundaries = boundaries
         self.elite_map = {}
         self.elite_indices = []
+        
+        #Number of replacements done
+        self.number_of_replacements = 0
 
         # A group is the number of cells along 
         # each dimension in the feature space.
@@ -265,7 +273,13 @@ class FixedFeatureMap:
             self.elite_map[index] = to_add
             replaced_elite = True
         elif self.elite_map[index].fitness < to_add.fitness:
+            
             self.elite_map[index] = to_add
+            
+            #value is replaced
+            self.number_of_replacements = self.number_of_replacements + 1
+            
+            
             replaced_elite = True
 
         return replaced_elite
@@ -288,11 +302,18 @@ class FixedFeatureMap:
         self.elite_map = {}
         for elite in all_elites:
             self.add_to_map(elite)
-        
+    
+    #Adds agent to the feature map
     def add(self, to_add):
+        
+        #Counts number added
         self.num_individuals_added += 1
+        
+        #Gets the "group" that the to_add belongs to
         portion_done = \
             self.num_individuals_added / self.num_individuals_to_evaluate
+        
+        #Gets next group
         next_num_groups = self.group_sizer.get_size(portion_done)
         if next_num_groups != self.num_groups:
             self.remap(next_num_groups)
@@ -397,9 +418,12 @@ def runME(runnum, game, sequence_len,
                 f.write(str(command))
         f.write("\n")
     
-    print("Sizes:")
-    print(feature_map_feasible.get_size())
-    print(feature_map_unfeasible.get_size())
+    print("Feasible Agents: ",feature_map_feasible.get_size())
+    print("Unfeasible Agents: ",feature_map_unfeasible.get_size())
+    
+    print("Feasible replacements: ",feature_map_feasible.number_of_replacements)
+    print("Unfeasible replacements: ",feature_map_unfeasible.number_of_replacements)
+    
     return best_fitness, best_sequence
 
 

@@ -74,7 +74,12 @@ class GameEvaluator:
         #agent.features = tuple(final_observation[:1])
         #agent.features = (numNewChars, numNewChars)
         #agent.features = (runningHash1, runningHash2)
-        agent.features = (agent.fitness, agent.fitness)
+        
+        #Set up the two different features for the agent
+        agent.feasible_features = (agent.fitness, agent.fitness)
+        agent.unfeasible_features = (agent.fitness, agent.fitness)
+        
+        #Define the action count to be number of actions taken in simulation
         agent.action_count = action_count
         
 class Agent:
@@ -89,7 +94,7 @@ class Agent:
         ]
         self.features = (None, None)
         self.feasible_features = (None, None)
-        self.unfeasible_features = ()
+        self.unfeasible_features = (None, None)
 
     def mutate(self):
         child = Agent(self.game, self.sequence_len)
@@ -103,10 +108,14 @@ class LinearSizer:
     
     
     def __init__(self, start_size, end_size):
+        #min_size = 200
+        #end_size = 200
+        #on runME
         self.min_size = start_size
         self.range = end_size-start_size
     
     def get_size(self, portion_done):
+        
         size = int((portion_done+1e-9)*self.range) + self.min_size
         return min(size, self.min_size+self.range)
 
@@ -273,7 +282,7 @@ class FixedFeatureMap:
             self.elite_map[index] = to_add
             replaced_elite = True
         elif self.elite_map[index].fitness < to_add.fitness:
-            
+            #print("replaced: ", self.elite_map[index].fitness, "with ", to_add.fitness, " at: ", index)
             self.elite_map[index] = to_add
             
             #value is replaced
@@ -321,6 +330,7 @@ class FixedFeatureMap:
         replaced_elite = self.add_to_map(to_add)
         self.buffer.add_individual(to_add)
         if self.buffer.is_overpopulated():
+            #print("Overpopulated")
             self.remove_from_map(self.buffer.remove_individual())
 
         return replaced_elite
@@ -370,6 +380,8 @@ def runME(runnum, game, sequence_len,
     #feature_ranges = [(-1.0, 1.0), (0.0, 1.0)]
     #feature_ranges = [(0.0, sequence_len), (0.0, sequence_len)]
     feature_ranges = [(0.0, 200.0), (0.0, 200.0)]
+    unfeasible_feature_range = [(-100.0, 100.0), (-100.0, 100.0)]
+    
     feature_ranges = feature_ranges[:2]
     #print(feature_ranges)
     
@@ -377,6 +389,7 @@ def runME(runnum, game, sequence_len,
     feature_map_feasible = FixedFeatureMap(num_individuals, buffer_size,
                                   feature_ranges, sizer)
 
+    #feature range needs to be lower
     feature_map_unfeasible = FixedFeatureMap(num_individuals, buffer_size,
                                   feature_ranges, sizer)
     
@@ -398,11 +411,18 @@ def runME(runnum, game, sequence_len,
         
         #Determine feasibility
         if cur_agent.fitness < feasibility_score:
+            #Fix the Feature to be Unfeasivle
+            cur_agent.features = cur_agent.unfeasible_features
+            
+            #Place into Map
             feature_map_unfeasible.add(cur_agent)
+            
         else:
+            #Fix the Feature to be feasible
+            cur_agent.features = cur_agent.feasible_features
+            
+            #Place into map
             feature_map_feasible.add(cur_agent)
-        
-        
         
         
         if cur_agent.fitness > best_fitness:
@@ -424,6 +444,7 @@ def runME(runnum, game, sequence_len,
     print("Feasible replacements: ",feature_map_feasible.number_of_replacements)
     print("Unfeasible replacements: ",feature_map_unfeasible.number_of_replacements)
     
+    print(feature_map_unfeasible.elite_map)
     return best_fitness, best_sequence
 
 

@@ -13,25 +13,33 @@ import gym
 from time import time
 #from gym.wrappers import Monitor
 from collections import deque
+from gym.utils.save_video import save_video
+from gym.wrappers import RecordVideo
 
 
 # A generic game evaluator.
 # Make specific evaluators if feature info is
 # required to be recorded and stored.
 class GameEvaluator:
-    def __init__(self, game_name, seed=1009, num_rep=1):
+    def __init__(self, game_name, seed=1009, num_rep=1, render=False):
         self.env = gym.make(game_name)
         self.seed = seed
         self.num_rep = num_rep
         self.num_actions = self.env.action_space.n
         print(self.num_actions)
-
+        
+        #For rendering
+        if render:
+            self.env = gym.make(game_name, render_mode='rgb_array')
+            self.env = gym.wrappers.RecordVideo(self.env, 'video')
+        
     def run(self, agent, render=False):
         agent.fitness = 0
         
         env = self.env
-        #if render:
-        #    env = Monitor(env, './videos/'+str(time())+'/')
+        
+       
+            
         observation = env.reset(seed = self.seed)
 
         action_frequency = [0] * self.num_actions
@@ -40,7 +48,7 @@ class GameEvaluator:
         done = False
         while not done:
             #if render:
-            #    env.render()
+              #  env.render()
             
             pos = min(action_count//self.num_rep, len(agent.commands)-1)
             action = agent.commands[pos]
@@ -51,8 +59,8 @@ class GameEvaluator:
 
             action_frequency[action] += 1
         
+            
         final_observation = list(observation)
-
         # calculate RLE approximation 
         #numNewChars = 0
         #prevChar = -2
@@ -368,6 +376,7 @@ def runME(runnum, game, sequence_len,
     feasibility_score = 0
     best_fitness = -10 ** 18
     best_sequence = None
+    best_agent = None
     whenfound = 0
 
     sizer = None
@@ -429,6 +438,7 @@ def runME(runnum, game, sequence_len,
             print('improved:', cur_agent.fitness, cur_agent.action_count)
             best_fitness = cur_agent.fitness
             best_sequence = cur_agent.commands
+            best_agent = cur_agent
             whenfound = individuals_evaluated
             game.run(cur_agent, render=False)
 
@@ -445,7 +455,10 @@ def runME(runnum, game, sequence_len,
     print("Unfeasible replacements: ",feature_map_unfeasible.number_of_replacements)
     
     print(feature_map_unfeasible.elite_map)
-    return best_fitness, best_sequence
+    
+    print(best_sequence)
+    
+    return best_agent, best_fitness, best_sequence
 
 
 def main(args=None):
@@ -457,6 +470,7 @@ def main(args=None):
     search_type = 'ME'
     #game = GameEvaluator('Qbert-v0', seed=1009, num_rep=2)
     game = GameEvaluator('LunarLander-v2', seed=1500, num_rep=3)
+    gameRecorder =  GameEvaluator('LunarLander-v2', seed=1500, num_rep=3, render=True)
 
     if search_type == 'ES':
         runES(run, game, 
@@ -469,7 +483,7 @@ def main(args=None):
     elif search_type == 'RS':
         runRS(run, game, num_actions, 100000)
     elif search_type == 'ME':
-        runME(run, game, 
+       best_agent, agent_fitness, agent_sequence =  runME(run, game, 
                 num_actions, 
                 init_pop_size=1000, 
                 num_individuals=100000, 
@@ -477,11 +491,20 @@ def main(args=None):
                 sizer_range=(200, 200), 
                 buffer_size=5000, 
                 mortality=True)
+       
+      
+       #Record game
+       print("Best Sequence: ", agent_fitness)
+        
+       gameRecorder.run(best_agent, render=True)
+        
     elif search_type == 'test':
         #from gymjam.search import Agent
         cur_agent = Agent(game, num_actions)
         while True:
             game.run(cur_agent, render=True)
+    
+    #
 
     game.env.close()
 
